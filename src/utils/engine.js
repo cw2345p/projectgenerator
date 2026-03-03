@@ -12,7 +12,7 @@ export const analyzeProject = async (idea, audience, features, feedback = "", cu
   });
 
   const prompt = `
-당신은 세계 최고의 프로젝트 아키텍트입니다. 다음 정보를 바탕으로 프로젝트 계획서와 기술 스택을 설계해주세요.
+당신은 세계 최고의 프로젝트 아키텍트입니다. 다음 정보를 바탕으로 프로젝트 계획서와 "기본" 및 "심화" 두 가지 버전의 기술 스택을 설계해주세요.
 
 **입력 정보:**
 1. 프로젝트 아이디어: ${idea}
@@ -30,12 +30,15 @@ ${JSON.stringify(currentPlan, null, 2)}
 
 ---
 **지침:**
-1. 만약 '현재 진행 중인 계획'이 시스템에 존재하고 '피드백' 내용이 있다면, **기존 계획의 전체적인 구성과 형식을 최대한 유지**하면서 피드백 내용만 정밀하게 반영하여 수정하십시오.
-2. 불필요하게 모든 내용을 새로 쓰지 말고, 피드백과 관련된 부분만 자연스럽게 업데이트하세요.
-3. 출력 형식 JSON 구조:
+1. 출력 형식 JSON 구조:
 {
   "planMarkdown": "마크다운 계획서",
-  "techStack": {
+  "techStackBasic": {
+    "language": "개발 언어",
+    "database": "데이터베이스",
+    "deployment": "배포 전략"
+  },
+  "techStackAdvanced": {
     "language": "개발 언어",
     "frontend": "프론트엔드 기술",
     "backend": "백엔드 기술",
@@ -44,8 +47,16 @@ ${JSON.stringify(currentPlan, null, 2)}
     "deployment": "배포 전략"
   }
 }
-4. 기술 스택은 각 카테고리별 핵심 위주로 최대 3개만, 줄바꿈(\\n)으로 구분하여 작성하세요.
-5. 모든 답변은 한국어로 작성하세요.
+
+2. **techStackBasic (기본 모드) 제약 사항**:
+   - 반드시 다음 목록 중 프로젝트에 가장 적합한 것만 골라서 사용하세요: [Python, React, Flutter, Baserow, Firebase, Vercel, Streamlit]
+   - 카테고리는 오직 "language", "database", "deployment" 3가지만 포함해야 합니다.
+
+3. **techStackAdvanced (심화 모드) 지침**:
+   - 모든 기술 카테고리에 대해 프로젝트에 최적화된 최신 기술 스택을 자유롭게 추천하세요.
+   - 각 카테고리별 핵심 위주로 최대 3개만, 줄바꿈(\\n)으로 구분하여 작성하세요.
+
+4. 모든 답변은 한국어로 작성하세요.
   `.trim();
 
   try {
@@ -56,7 +67,8 @@ ${JSON.stringify(currentPlan, null, 2)}
     console.error("Gemini AI Analysis Error:", error);
     return {
       planMarkdown: "# 분석 오류 발생\n피드백 반영 중 문제가 발생했습니다. 다시 시도해주세요.",
-      techStack: { language: "Error", frontend: "Error", backend: "Error", database: "Error", ai: "Error", deployment: "Error" }
+      techStackBasic: { language: "Error", database: "Error", deployment: "Error" },
+      techStackAdvanced: { language: "Error", frontend: "Error", backend: "Error", database: "Error", ai: "Error", deployment: "Error" }
     };
   }
 };
@@ -99,6 +111,10 @@ export const askChatbot = async (message, history = []) => {
 };
 
 export const generateAntigravityPrompt = (idea, plan, techStack) => {
+  const stackList = Object.entries(techStack)
+    .map(([key, value]) => `- ${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+    .join('\n');
+
   return `
 태스크: "${idea}" 프로젝트를 개발하라.
 
@@ -108,11 +124,7 @@ export const generateAntigravityPrompt = (idea, plan, techStack) => {
 ${plan}
 
 ### 기술 스택
-- Frontend: ${techStack.frontend}
-- Backend: ${techStack.backend}
-- Database: ${techStack.database}
-- AI: ${techStack.ai}
-- Deployment: ${techStack.deployment}
+${stackList}
 
 ### 구현 가이드
 1. 우선 최상위 디렉토리에 \`task.md\`를 생성하여 전체 작업 목록을 정리하라.

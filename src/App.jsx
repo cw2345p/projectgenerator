@@ -5,7 +5,8 @@ function App() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState({ idea: '', audience: '', features: '' });
-  const [analysis, setAnalysis] = useState({ planMarkdown: '', techStack: {} });
+  const [analysis, setAnalysis] = useState({ planMarkdown: '', techStackBasic: {}, techStackAdvanced: {} });
+  const [activeTab, setActiveTab] = useState('basic'); // 'basic' | 'advanced'
   const [feedback, setFeedback] = useState('');
   const [finalPrompt, setFinalPrompt] = useState('');
   const [copied, setCopied] = useState(false);
@@ -43,6 +44,7 @@ function App() {
     try {
       const result = await analyzeProject(input.idea, input.audience, input.features);
       setAnalysis(result);
+      setActiveTab('basic'); // 초기 분석 시 기본 탭으로 설정
       setStep(2);
     } finally {
       setLoading(false);
@@ -68,7 +70,8 @@ function App() {
   };
 
   const handleConfirm = () => {
-    const prompt = generateAntigravityPrompt(input.idea, analysis.planMarkdown, analysis.techStack);
+    const currentStack = activeTab === 'basic' ? analysis.techStackBasic : analysis.techStackAdvanced;
+    const prompt = generateAntigravityPrompt(input.idea, analysis.planMarkdown, currentStack);
     setFinalPrompt(prompt);
     setStep(3);
   };
@@ -177,9 +180,37 @@ function App() {
                   <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-primary)', lineHeight: '1.8' }}>{analysis.planMarkdown}</div>
                 </div>
 
-                <h3 style={{ marginBottom: '1.5rem' }}>추천 아키텍처</h3>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+                  <button
+                    onClick={() => setActiveTab('basic')}
+                    style={{
+                      padding: '0.6rem 1.5rem',
+                      borderRadius: '12px',
+                      background: activeTab === 'basic' ? 'var(--accent-gradient)' : 'transparent',
+                      color: activeTab === 'basic' ? 'white' : '#64748b',
+                      border: activeTab === 'basic' ? 'none' : '1px solid #e2e8f0',
+                      fontWeight: '600',
+                      cursor: loading ? 'not-allowed' : 'pointer'
+                    }}
+                    disabled={loading}
+                  >기본 모드</button>
+                  <button
+                    onClick={() => setActiveTab('advanced')}
+                    style={{
+                      padding: '0.6rem 1.5rem',
+                      borderRadius: '12px',
+                      background: activeTab === 'advanced' ? 'var(--accent-gradient)' : 'transparent',
+                      color: activeTab === 'advanced' ? 'white' : '#64748b',
+                      border: activeTab === 'advanced' ? 'none' : '1px solid #e2e8f0',
+                      fontWeight: '600',
+                      cursor: loading ? 'not-allowed' : 'pointer'
+                    }}
+                    disabled={loading}
+                  >심화 모드</button>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
-                  {Object.entries(analysis.techStack).map(([key, value]) => (
+                  {Object.entries(activeTab === 'basic' ? analysis.techStackBasic : analysis.techStackAdvanced).map(([key, value]) => (
                     <div key={key} style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'flex-start', gap: '2rem' }}>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', width: '120px', flexShrink: 0, marginTop: '0.2rem' }}>{key}</div>
                       <div style={{ fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
