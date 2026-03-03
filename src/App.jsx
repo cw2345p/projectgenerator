@@ -53,7 +53,7 @@ function App() {
     if (!feedback.trim()) return;
     setLoading(true);
     try {
-      const result = await analyzeProject(input.idea, input.audience, input.features, feedback);
+      const result = await analyzeProject(input.idea, input.audience, input.features, feedback, analysis);
       setAnalysis(result);
       setFeedback('');
     } finally {

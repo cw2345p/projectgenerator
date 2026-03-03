@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-export const analyzeProject = async (idea, audience, features, feedback = "") => {
+export const analyzeProject = async (idea, audience, features, feedback = "", currentPlan = null) => {
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     generationConfig: {
@@ -19,12 +19,20 @@ export const analyzeProject = async (idea, audience, features, feedback = "") =>
 2. 대상 사용자: ${audience || '미정'}
 3. 핵심 기능 목록: ${features || '미정'}
 
+${currentPlan ? `
+**현재 진행 중인 계획 (참고용):**
+\`\`\`json
+${JSON.stringify(currentPlan, null, 2)}
+\`\`\`
+` : ''}
+
 **최우선 수정 지시사항 (피드백): ${feedback || '없음'}**
 
 ---
 **지침:**
-1. 만약 '피드백' 내용이 있다면, 이전의 모든 계획보다 **피드백 내용을 최우선으로 반영**하여 설계를 변경하세요. 사용자의 요구사항을 절대 무시하지 말고 즉각적으로 아키텍처를 수정하십시오.
-2. 출력 형식 JSON 구조:
+1. 만약 '현재 진행 중인 계획'이 시스템에 존재하고 '피드백' 내용이 있다면, **기존 계획의 전체적인 구성과 형식을 최대한 유지**하면서 피드백 내용만 정밀하게 반영하여 수정하십시오.
+2. 불필요하게 모든 내용을 새로 쓰지 말고, 피드백과 관련된 부분만 자연스럽게 업데이트하세요.
+3. 출력 형식 JSON 구조:
 {
   "planMarkdown": "마크다운 계획서",
   "techStack": {
@@ -36,8 +44,8 @@ export const analyzeProject = async (idea, audience, features, feedback = "") =>
     "deployment": "배포 전략"
   }
 }
-3. 기술 스택은 각 카테고리별 핵심 위주로 최대 3개만, 줄바꿈(\\n)으로 구분하여 작성하세요.
-4. 모든 답변은 한국어로 작성하세요.
+4. 기술 스택은 각 카테고리별 핵심 위주로 최대 3개만, 줄바꿈(\\n)으로 구분하여 작성하세요.
+5. 모든 답변은 한국어로 작성하세요.
   `.trim();
 
   try {
